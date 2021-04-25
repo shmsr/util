@@ -40,16 +40,12 @@ func CopyN(ctx context.Context, dst io.Writer, src io.Reader, n int64) (int64, e
 // ReadAll is similar to io.ReadAll but context aware.
 func ReadAll(ctx context.Context, r io.Reader) ([]byte, error) {
 	b := make([]byte, 0, 512)
+	wrp := wrapReader{ctx, r}
 	for {
-		select {
-		case <-ctx.Done():
-			return b, ctx.Err()
-		default:
-		}
 		if len(b) == cap(b) {
 			b = append(b, 0)[:len(b)]
 		}
-		n, err := r.Read(b[len(b):cap(b)])
+		n, err := wrp.Read(b[len(b):cap(b)])
 		b = b[:len(b)+n]
 		if err != nil {
 			if err == io.EOF {
